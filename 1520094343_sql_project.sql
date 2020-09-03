@@ -31,7 +31,7 @@ Answer:
 SELECT name
 FROM Facilities
 WHERE membercost =0
-LIMIT 0 , 30
+LIMIT 0 , 30     ---  check for LIMIT
 
 /* Q2: How many facilities do not charge a fee to members? */
 
