@@ -30,8 +30,8 @@ Please list the names of the facilities that do. */
 Answer: 
 SELECT name
 FROM Facilities
-WHERE membercost =0
-LIMIT 0 , 30     ---  check for LIMIT
+WHERE membercost > 0
+LIMIT 30    
 
 /* Q2: How many facilities do not charge a fee to members? */
 
