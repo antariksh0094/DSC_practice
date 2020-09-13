@@ -98,52 +98,47 @@ the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
-select f.name, m.firstname, m.surname,
-	case when b.memid = 0 and f.guestcost * b.slots > 30
-	then f.guestcost * b.slots
-	when b.memid != 0 and f.membercost * b.slots > 30
-	then f.membercost * b.slots
-	end as cost
-from Bookings b
-join Facilities f
-on b.facid = f.facid
-join Members m
-on m.memid = b.memid
-where starttime like '2012-09-14%'
-order by cost desc
+SELECT CONCAT( firstname,  ' ', surname ) AS member_name, Facilities.name AS facility_name, 
+    CASE WHEN Members.memid =0
+    THEN (Bookings.slots * Facilities.guestcost)
+    ELSE (Bookings.slots * Facilities.membercost) END AS cost 
+FROM Members
+JOIN Bookings ON Members.memid = Bookings.memid
+JOIN Facilities ON Bookings.facid = Facilities.facid
+WHERE ((Members.memid =0 AND Bookings.starttime >=  '2012-09-14 00:00:00'
+AND Bookings.starttime <=  '2012-09-14 23:30:00'AND (Bookings.slots * Facilities.guestcost) > 30.00) 
+OR (Members.memid !=0 AND Bookings.starttime >=  '2012-09-14 00:00:00'AND Bookings.starttime <=  '2012-09-14 23:30:00'
+AND (Bookings.slots * Facilities.membercost) > 30.00))
+ORDER BY cost DESC;
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
-select f.name, m.firstname, m.surname,
-	case when b.memid = 0 and f.guestcost * b.slots > 30
-	then f.guestcost * b.slots
-	when b.memid != 0 and f.membercost * b.slots > 30
-	then f.membercost * b.slots
-	end as cost
-from Bookings b
-join Facilities f
-on b.facid = f.facid
-join Members m
-on m.memid = b.memid
-where starttime in
-(select starttime from Bookings
- where starttime like '2012-09-14%')
-order by cost desc
+SELECT CONCAT( firstname,  ' ', surname ) AS member_name, Facilities.name AS facility_name, 
+    CASE WHEN Members.memid =0
+    THEN (BA.slots * Facilities.guestcost)
+    ELSE (BA.slots * Facilities.membercost)
+    END AS cost 
+FROM (SELECT * FROM Bookings WHERE starttime >=  '2012-09-14 00:00:00'
+AND starttime <=  '2012-09-14 23:30:00') AS BA
+JOIN Members ON Members.memid = BA.memid
+JOIN Facilities ON BA.facid = Facilities.facid
+WHERE (((Members.memid =0)AND ((BA.slots * Facilities.guestcost) > 30.00)) OR (
+    (Members.memid !=0) AND ((BA.slots * Facilities.membercost) > 30.00)))
+ORDER BY cost DESC;
 
 
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
-select f.name,
-	case when b.memid = 0
-	then sum(f.guestcost * b.slots)
-	when b.memid != 0
-	then sum(f.membercost * b.slots)
-	end as revenue
-from Bookings b
-join Facilities f
-on b.facid = f.facid
-join Members m
-on m.memid = b.memid
-group by f.facid
+SELECT facility_name, revenue
+FROM (SELECT Facilities.name AS facility_name, SUM( 
+    CASE WHEN Bookings.memid =0
+    THEN Bookings.slots * Facilities.guestcost
+    ELSE Bookings.slots * Facilities.membercost
+    END ) AS revenue
+FROM Bookings
+JOIN Facilities ON Bookings.facid = Facilities.facid
+GROUP BY Facilities.name) AS RA
+WHERE revenue < 1000.0
+ORDER BY revenue;
